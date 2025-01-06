@@ -5,32 +5,33 @@ import re
 # Load the dataset
 data = pd.read_csv('raw_customer_feedback.csv')
 
-print("Original Data:")
+# Quick preview of the original data
+print("Original Data Sample:")
 print(data.head())
 
-# Step 1: Clear text so that theres no special characters 
+# Function to clean up text by removing URLs, special characters, and extra spaces
 def clean_text(text):
     if pd.isna(text):
         return ""
-    text = re.sub(r'http\S+|www\.\S+', '', text)  # Remove URLs
-    text = re.sub(r'[^A-Za-z0-9 ]+', '', text)  # Remove special characters
-    text = text.strip().lower()  # Convert to lowercase & trim spaces
-    return text
+    text = re.sub(r'http\S+|www\.\S+', '', text)  # Strip URLs
+    text = re.sub(r'[^A-Za-z0-9 ]+', '', text)  # Keep only alphanumeric and spaces
+    return text.strip().lower()
 
 data['feedback'] = data['feedback'].apply(clean_text)
 
-# Step 2: Fill in missing data
-# Fill missing ratings with median rating
-data['rating'] = data['rating'].fillna(data['rating'].median())
+# Fill missing ratings with the median to maintain consistency
+if 'rating' in data.columns:
+    median_rating = data['rating'].median()
+    data['rating'] = data['rating'].fillna(median_rating)
 
-# Step 3: Standardize Date Formats
-data['date'] = pd.to_datetime(data['date'], errors='coerce')
+# Parse and standardize dates; set invalid ones to NaT
+if 'date' in data.columns:
+    data['date'] = pd.to_datetime(data['date'], errors='coerce')
 
-# Step 4: Remove any duplicate feedback
+# Remove duplicate feedback entries to ensure unique observations
 data = data.drop_duplicates(subset=['feedback'])
 
-# Step 5: Save the new data 
+# Save the cleaned dataset for downstream use
 cleaned_file_path = 'cleaned_customer_feedback.csv'
 data.to_csv(cleaned_file_path, index=False)
-
-print(f"Cleaned data saved to {cleaned_file_path}")
+print(f"Cleaned data has been saved to {cleaned_file_path}")
